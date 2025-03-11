@@ -1,6 +1,6 @@
 import os
 from flask import render_template, Blueprint
-from codefile.util import Util
+from util import Util
 
 manager_bp = Blueprint('manager',__name__,template_folder= 'templates')
 

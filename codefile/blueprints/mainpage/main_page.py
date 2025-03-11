@@ -3,7 +3,7 @@ import sys
 
 from flask import render_template, Blueprint,redirect,url_for
 from codefile.util import Util
-from codefile.blueprints.managerpage.manager_page import ManagerPage
+from blueprints.managerpage.manager_page import ManagerPage
 
 main_bp = Blueprint('main',__name__,template_folder= 'templates')
 
