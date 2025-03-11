@@ -1,9 +1,10 @@
 import os
-import re
+import sys
 
+sys.path.append(os.path.join(os.path.dirname(__file__), 'blueprints'))
 from flask import Flask, render_template
-from blueprints.mainpage.main_page import main_bp
-from blueprints.managerpage.manager_page import manager_bp
+from mainpage.main_page import main_bp
+from managerpage.manager_page import manager_bp
 
 app = Flask(__name__)
 
