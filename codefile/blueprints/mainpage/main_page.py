@@ -7,6 +7,7 @@ from blueprints.managerpage.manager_page import ManagerPage
 
 main_bp = Blueprint('main',__name__,template_folder= 'templates')
 
+
 @main_bp.route('/')
 def home():
     return render_template("main.html")  # Serve main.html from templates/html/
