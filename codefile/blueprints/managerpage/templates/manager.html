@@ -33,7 +33,7 @@
             .then(response => response.json())  
             .then(data => {
                 if (data.message === "Git update successful") {
-                    location.reload();  
+                    refresh();  
                 }
             })
             .catch(error => console.error("Error updating:", error));
