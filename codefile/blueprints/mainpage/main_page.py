@@ -3,8 +3,8 @@ import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), 'blueprints'))
 
 from flask import render_template, Blueprint,redirect,url_for
-from codefile.util import Util
-from codefile.blueprints.managerpage.manager_page import ManagerPage
+from util import Util
+from blueprints.managerpage.manager_page import ManagerPage
 
 main_bp = Blueprint('main',__name__,template_folder= 'templates')
 
@@ -13,6 +13,6 @@ main_bp = Blueprint('main',__name__,template_folder= 'templates')
 def home():
     return render_template("main.html")  # Serve main.html from templates/html/
 
-@main_bp.route('/goToManagerPage', methods=['GET', 'POST'])
-def goToManagerPage():
+@main_bp.route('/manager', methods=['GET', 'POST'])
+def manager():
     return ManagerPage()

@@ -12,7 +12,4 @@ app.register_blueprint(main_bp)
 app.register_blueprint(manager_bp, url_prefix= '/manager')
 
 if __name__ == '__main__':
-    print("aa")
-    print("aa")
-    print("new")
-    app.run(debug=True)
+    app.run(host= "0.0.0.0", debug=True)

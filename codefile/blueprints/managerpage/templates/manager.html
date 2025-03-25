@@ -21,32 +21,43 @@
     <h1>Manager Site Version: {{version}}</h1>
     <p>This button will clone the site from Git and update the files.</p>
     <button onclick="git_update()">Update</button>
-    <button onclick="refresh()">refresh</button>
-    <button onclick="clean_log()">clean_log</button>
-    <button onclick="return_home()">return</button>
-    <h2>server Log:</h2>
+    <button onclick="refresh()">Refresh</button>
+    <button onclick="_clean_log()">Clean Log</button>
+    <button onclick="return_home()">Return</button>
+    <h2>Server Log:</h2>
     <pre>{{log}}</pre>
 
     <script>
     function git_update() {
-        fetch('/git_update', { method: 'POST' })
-            .then(response => response.json())  // Parse JSON response
+        fetch('manager/git_update', { method: 'POST' })
+            .then(response => response.json())  
             .then(data => {
                 if (data.message === "Git update successful") {
-                    location.reload();  // Refresh the page
+                    location.reload();  
                 }
             })
             .catch(error => console.error("Error updating:", error));
     }
-        function return_home()  {
-            window.location.href = "/";
-        }
-    function refresh() {
-        fetch('/goToManagerPage', { method: 'GET' })
-        location.reload();
+
+    function return_home() {
+        window.location.href = "/";
     }
-        function clean_log() {
-        fetch('/clean_log', { method: 'POST' })
+
+    function refresh() {
+        fetch('/manager', { method: 'GET' })
+            .then(() => location.reload())  // Ensure reload happens after request
+            .catch(error => console.error("Error refreshing:", error));
+    }
+
+    function _clean_log() {
+        fetch('manager/clean_log', { method: 'POST' })  // Move inside function
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "Log cleaned successfully") {
+                    location.reload();  
+                }
+            })
+            .catch(error => console.error("Error cleaning log:", error));
     }
     </script>
 </body>
