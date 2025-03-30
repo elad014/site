@@ -1,6 +1,11 @@
 import os
 from flask import render_template, Blueprint
 from util import Util
+import psycopg2
+
+
+# Database connection parameters
+DB_NAME = "mydb"
 
 manager_bp = Blueprint('manager',__name__,template_folder= 'templates')
 
@@ -12,16 +17,38 @@ def ManagerPage():
     print(f"Version: {version}, Log: {log}")  # Debugging print
     return render_template("manager.html", version=version, log=log)
 
+
 @manager_bp.route('/clean_log', methods=['POST'])
 def clean_log():
     Util.clean_log()
+    # tbd - enter name to a new row in the db
+    conn = psycopg2.connect(dbname=DB_NAME)
+    # Create a cursor object
+    cur = conn.cursor()
+    name = "Sharon"
+    cur.execute("INSERT INTO users (name) VALUES (%s) RETURNING id;", (name,))
+    inserted_id = cur.fetchone()[0]
+    # Commit the transaction
+    conn.commit()
+    # Fetch all rows from the 'users' table
+    cur.execute("SELECT * FROM users;")
+    rows = cur.fetchall()
+
+    # Print the rows (table content)
+    print("\nTable Content:")
+    for row in rows:
+        print(row)
+
+    # Close the cursor and connection
+    cur.close()
+    conn.close()
     return {'message': 'Git update successful'}, 200
 
 @manager_bp.route('/git_update', methods=['POST'])
 def git_update():
     print("[INFO] Update files from git w8 4 finish!!!")
     if is_production:
-        os.system("cd /home/ubuntu/projects/site/codefile && git pull https://github.com/elad014/site.git main --progress")
+        os.system("cd /home/ubuntu/Desktop/site/codefile && git reset --hard HEAD  && git pull https://github.com/elad014/site.git main --progress")
     return {'message': 'Git update successful'}, 200
 
 def is_production():
