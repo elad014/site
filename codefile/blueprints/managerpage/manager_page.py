@@ -1,8 +1,7 @@
 import os
 from flask import render_template, Blueprint
-from util import Util
 import psycopg2
-
+from utils import Utils
 
 # Database connection parameters
 DB_NAME = "mydb"
@@ -10,17 +9,15 @@ DB_NAME = "mydb"
 manager_bp = Blueprint('manager',__name__,template_folder= 'templates')
 
 @manager_bp.route('/')
-def ManagerPage():
-    print("Inside ManagerPage function!")  # Debugging print
-    version = Util.read_version()
-    log = Util.read_log()
-    print(f"Version: {version}, Log: {log}")  # Debugging print
+def ManagerPage():    
+    version = Utils.read_version()
+    log = Utils.read_log()    
     return render_template("manager.html", version=version, log=log)
 
 
 @manager_bp.route('/clean_log', methods=['POST'])
 def clean_log():
-    Util.clean_log()
+    Utils.clean_log()
     # tbd - enter name to a new row in the db
     conn = psycopg2.connect(dbname=DB_NAME)
     # Create a cursor object

@@ -32,6 +32,8 @@
     <button onclick="incrementCounter()">Count Clicks</button>
     <button onclick="resetCounter()">Reset</button>
     <button onclick="goToManagerPage()">Go to Manager Page</button>
+    <button onclick="goToStockPage()">Pick Stocks</button>
+        
 
     <script>
         let count = 0;
@@ -48,6 +50,10 @@
 
         function goToManagerPage() {
             window.location.href = "/manager";
+        }
+
+        function goToStockPage() {
+            window.location.href = "/stocks";  // The route is defined as '/stocks' in stocks_bp
         }
     </script>
 </body>
