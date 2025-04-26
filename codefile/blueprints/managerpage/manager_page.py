@@ -18,28 +18,7 @@ def ManagerPage():
 @manager_bp.route('/clean_log', methods=['POST'])
 def clean_log():
     Utils.clean_log()
-    # tbd - enter name to a new row in the db
-    conn = psycopg2.connect(dbname=DB_NAME)
-    # Create a cursor object
-    cur = conn.cursor()
-    name = "Sharon"
-    cur.execute("INSERT INTO users (name) VALUES (%s) RETURNING id;", (name,))
-    inserted_id = cur.fetchone()[0]
-    # Commit the transaction
-    conn.commit()
-    # Fetch all rows from the 'users' table
-    cur.execute("SELECT * FROM users;")
-    rows = cur.fetchall()
-
-    # Print the rows (table content)
-    print("\nTable Content:")
-    for row in rows:
-        print(row)
-
-    # Close the cursor and connection
-    cur.close()
-    conn.close()
-    return {'message': 'Git update successful'}, 200
+    return {'message': 'Log Cleaned Successfully'}, 200
 
 @manager_bp.route('/git_update', methods=['POST'])
 def git_update():
