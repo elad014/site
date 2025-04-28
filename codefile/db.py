@@ -17,7 +17,7 @@ class DB_Config:
         """Create and return a database cursor"""
         conn = DB_Config.get_db_connection()
         return conn.cursor()
-
+        
     @staticmethod
     def print_table_content(table_name):
         cursor = DB_Config.get_cursor()

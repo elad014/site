@@ -148,3 +148,4 @@ class Stock:
         except Exception as e:
             logger.error(f"Error updating {self.ticker}: {e}")
             raise    
+            
