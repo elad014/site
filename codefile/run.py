@@ -5,7 +5,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'blueprints'))
 from flask import Flask, render_template
 from loginpage.login import login_bp
 from signuppage.signup import signup_bp
-from mainpage.main_page import main_bp
 from managerpage.manager_page import manager_bp
 from stocks.stocks import stocks_bp
 from db import DB_Config
