@@ -3,6 +3,9 @@ from db import DB_Config, DB_Manager
 from utils import Logger
 from stocks.stocks import Stock
 
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+
 logger = Logger.setup_logger(__name__)
 
 app = Flask(__name__)
@@ -36,23 +39,37 @@ def login():
         cursor = DB_Config.get_cursor()
         db_manager = DB_Manager(cursor)
         
-        # Check if user exists and password matches
-        cursor.execute("SELECT * FROM users WHERE email = %s AND password = %s", (email, password))
+        cursor.execute("SELECT * FROM users")
+        users = cursor.fetchall()
+        print("im users", users)
+
+        cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
-        
-        if user:
-            # Successful login
-            return redirect(url_for('dashboard'))
+        print("im user", user)  
+
+        if user:            # Assuming the password is stored in the 5th column (adjust index if needed)
+            stored_password = user[2]  # Make sure this index corresponds to the actual password field
+
+            # Check if the password matches
+            if check_password_hash(stored_password, password):
+                print("Login successful")
+                return redirect(url_for('stocks.stocks'))  # You might need to adjust this URL
+            else:
+                flash("Invalid password, please try again.", "error")
+                return redirect(url_for('login.login_page'))  # Adjust if needed
+
         else:
-            flash('Invalid email or password', 'error')
-            return redirect(url_for('login_page'))
+            flash("User not found.", "error")
+            return redirect(url_for('login.login_page'))  # Adjust if needed
             
     except Exception as e:
-        logger.error(f"Login error: {e}")
-        flash('An error occurred during login', 'error')
-        return redirect(url_for('login_page'))
+        print("Error:", e)
+        flash("An error occurred, please try again.", "error")
+        return redirect(url_for('login.login_page'))  # Adjust if needed
+
     finally:
         cursor.close()
+
 
 @app.route('/signup')
 def signup_page():

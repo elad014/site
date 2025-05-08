@@ -10,7 +10,7 @@ from stocks.stocks import stocks_bp
 from db import DB_Config
 
 app = Flask(__name__)
-
+app.secret_key = '456789'
 app.register_blueprint(login_bp)
 app.register_blueprint(signup_bp, url_prefix='/signup')
 app.register_blueprint(manager_bp, url_prefix= '/manager')

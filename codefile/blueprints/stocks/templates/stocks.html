@@ -79,6 +79,24 @@
             background-color: #f8d7da;
             color: #721c24;
         }
+        .stocks-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+        }
+        .stocks-table th, .stocks-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .stocks-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .stocks-table tr:hover {
+            background-color: #f5f5f5;
+        }
     </style>
 </head>
 <body>
@@ -88,6 +106,34 @@
              alt="Stock Market Trading Floor" 
              class="stock-image">
         
+        <h2>My Stocks</h2>
+        {% if stocks %}
+        <table class="stocks-table">
+            <thead>
+                <tr>
+                    <th>Ticker</th>
+                    <th>Company</th>
+                    <th>Price</th>
+                    <th>Trading Volume</th>
+                    <th>Avg Trading Volume</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stock in stocks %}
+                <tr>
+                    <td>{{ stock.name }}</td>
+                    <td>{{ stock.company }}</td>
+                    <td>${{ "%.2f"|format(stock.price) }}</td>
+                    <td>{{ "{:,}".format(stock.trading_volume) }}</td>
+                    <td>{{ "{:,}".format(stock.avg_trading_volume) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No stocks added yet.</p>
+        {% endif %}
+
         <div class="stock-form">
             <h2>Add New Stock</h2>
             <form action="/stocks/pick" method="POST">
@@ -95,7 +141,6 @@
                 <button type="submit" class="submit-button">Add Stock</button>
             </form>
         </div>
-
 
         {% if message %}
         <div class="message {% if success %}success{% else %}error{% endif %}">

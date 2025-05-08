@@ -1,8 +1,11 @@
-from flask import Flask,render_template, Blueprint,redirect,url_for,request,flash
+from flask import Flask,render_template, Blueprint,redirect,url_for,request,flash 
 from db import DB_Config, DB_Manager
 from utils import Logger
+import logging
+from werkzeug.security import generate_password_hash, check_password_hash
 
 signup_bp = Blueprint('signup',__name__,template_folder= 'templates')
+logger = logging.getLogger(__name__)
 
 @signup_bp.route('/', methods=['GET', 'POST'])
 def signup():
@@ -13,25 +16,24 @@ def signup():
             
             # Get form data
             data = {
+                'user_id': request.form.get('user_id'),
                 'email': request.form.get('email'),
-                'first_name': request.form.get('first_name'),
-                'last_name': request.form.get('last_name'),
+                'full_name': request.form.get('full_name'),
                 'phone_number': request.form.get('phone_number'),
-                'password': request.form.get('password'),
-                'user_type': request.form.get('user_type')
+                'password': generate_password_hash(request.form.get('password')),
+                'country': request.form.get('country'),
+                'user_type': 0
             }
             
             # Insert new user
             db_manager.insert_record('users', data)
             cursor.connection.commit()
             
-            flash('Account created successfully! Please login.', 'success')
-            return redirect(url_for('login.login_page'))
+            return redirect("/")
             
         except Exception as e:
-            logger.error(f"Signup error: {e}")
-            flash('An error occurred during signup', 'error')
-            return redirect(url_for('login.signup'))
+            print(e)
+            return redirect(url_for('signup.signup'))
         finally:
             cursor.close()
     

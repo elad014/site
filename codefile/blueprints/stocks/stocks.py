@@ -12,7 +12,17 @@ stocks_bp = Blueprint('stocks', __name__, template_folder='templates')
 
 @stocks_bp.route('/', methods=['GET', 'POST'])
 def stocks():
-    return render_template("stocks.html")
+    try:
+        cursor = DB_Config.get_cursor()
+        cursor.execute("SELECT * FROM stocks ORDER BY price DESC")
+        stocks = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        stocks_data = [dict(zip(columns, stock)) for stock in stocks]
+        cursor.close()
+        return render_template("stocks.html", stocks=stocks_data)
+    except Exception as e:
+        logger.error(f"Error fetching stocks: {e}")
+        return render_template("stocks.html", stocks=[])
 
 @stocks_bp.route('/pick', methods=['POST'])
 def pick_stock():

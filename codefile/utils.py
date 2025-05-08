@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 
-
 class Utils:
 
     @staticmethod
@@ -24,7 +23,7 @@ class Utils:
         with open("log.txt", 'w') as file:
             file.write("")
             
-class Logger:
+class Logger(logging.Logger):
     @staticmethod
     def setup_logger(name):
         """Configure and return a logger with the specified name"""
