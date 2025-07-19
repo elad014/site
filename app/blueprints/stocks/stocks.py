@@ -1,4 +1,5 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_required, current_user
 import yfinance as yf
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
@@ -11,51 +12,106 @@ logger = Logger.setup_logger(__name__)
 stocks_bp = Blueprint('stocks', __name__, template_folder='templates')
 
 @stocks_bp.route('/', methods=['GET', 'POST'])
+@login_required
 def stocks():
     try:
         cursor = DB_Config.get_cursor()
-        cursor.execute("SELECT * FROM stocks ORDER BY price DESC")
-        stocks = cursor.fetchall()
+        
+        # SQL query to get stocks for the current user from their watchlist
+        query = """
+            SELECT s.name, s.company, s.price, s.trading_volume, s.avg_trading_volume
+            FROM stocks s
+            JOIN user_stocks_watchlist w ON s.id = w.stock_id
+            WHERE w.user_id = %s
+            ORDER BY s.price DESC;
+        """
+        
+        cursor.execute(query, (current_user.id,))
+        
+        stocks_data = []
         columns = [desc[0] for desc in cursor.description]
-        stocks_data = [dict(zip(columns, stock)) for stock in stocks]
+        for stock in cursor.fetchall():
+            stocks_data.append(dict(zip(columns, stock)))
+            
         cursor.close()
         return render_template("stocks.html", stocks=stocks_data)
+        
     except Exception as e:
-        logger.error(f"Error fetching stocks: {e}")
-        return render_template("stocks.html", stocks=[])
+        logger.error(f"Error fetching user's stocks: {e}")
+        return render_template("stocks.html", stocks=[], error="Could not load your watchlist.")
 
 @stocks_bp.route('/pick', methods=['POST'])
+@login_required
 def pick_stock():
     ticker = request.form.get('ticker', '').upper()
     
     if not ticker:
-        return redirect(url_for('stocks.stocks', 
-                              message='Please enter a stock ticker',
-                              success='false'))
-    
+        flash('Please enter a stock ticker.', 'error')
+        return redirect(url_for('stocks.stocks'))
+
     data_provider = YFinanceProvider()
-    if not data_provider.is_valid_ticker(ticker):
-        return redirect(url_for('stocks.stocks',
-                              message=f'Invalid stock ticker: {ticker}',
-                              success='false'))
     
+    # Step 1: Validate the stock ticker first
+    if not data_provider.is_valid_ticker(ticker):
+        flash(f'Invalid or unrecognized stock ticker: {ticker}', 'error')
+        return redirect(url_for('stocks.stocks'))
+        
     try:
         cursor = DB_Config.get_cursor()
-        stock = Stock(ticker, data_provider, DB_Manager(cursor))
-        stock.add_stock()
+        db_manager = DB_Manager(cursor)
+        
+        # Step 2: Check if the stock exists in the main 'stocks' table
+        cursor.execute("SELECT id FROM stocks WHERE name = %s", (ticker,))
+        stock_row = cursor.fetchone()
+        
+        stock_id = None
+        if not stock_row:
+            # Stock is not in our database, so add it.
+            # We know it's valid, so we can now fetch its full info.
+            stock_adder = Stock(ticker, data_provider, db_manager)
+            stock_adder.add_stock() # Re-using the original add_stock method
+            
+            # Get the new ID
+            cursor.execute("SELECT id FROM stocks WHERE name = %s", (ticker,))
+            new_stock_row = cursor.fetchone()
+            if new_stock_row:
+                stock_id = new_stock_row[0]
+        else:
+            # Stock already exists, just get its ID
+            stock_id = stock_row[0]
+
+        if not stock_id:
+            raise Exception("Failed to find or create a stock_id.")
+
+        user_id = current_user.id
+        
+        # Step 3: Add the stock to the user's personal watchlist
+        cursor.execute(
+            "SELECT * FROM user_stocks_watchlist WHERE user_id = %s AND stock_id = %s",
+            (user_id, stock_id)
+        )
+        if cursor.fetchone():
+            flash(f'Stock {ticker} is already in your watchlist.', 'info')
+        else:
+            cursor.execute(
+                "INSERT INTO user_stocks_watchlist (user_id, stock_id) VALUES (%s, %s)",
+                (user_id, stock_id)
+            )
+            flash(f'Successfully added {ticker} to your watchlist!', 'success')
+            
         cursor.connection.commit()
-        cursor.close()
-        return redirect(url_for('stocks.stocks',
-                              message=f'Successfully added stock: {ticker}',
-                              success='true'))
+        
     except Exception as e:
-        logger.error(f"Error adding stock {ticker}: {e}")
-        if cursor:
+        logger.error(f"Error processing stock {ticker} for user {current_user.id}: {e}")
+        if 'cursor' in locals() and cursor:
             cursor.connection.rollback()
+        flash(f'An error occurred while processing the stock. Please try again.', 'error')
+        
+    finally:
+        if 'cursor' in locals() and cursor:
             cursor.close()
-        return redirect(url_for('stocks.stocks',
-                              message=f'Error adding stock: {str(e)}',
-                              success='false'))
+            
+    return redirect(url_for('stocks.stocks'))
 
 @dataclass
 class StockData:
@@ -89,14 +145,26 @@ class YFinanceProvider(StockDataProvider):
         try:
             stock = yf.Ticker(ticker)
             return stock.info
-        except Exception as e:
-            raise StockDataError(f"Failed to fetch data for {ticker}: {e}")
+        except Exception:
+            return {}
 
     def is_valid_ticker(self, ticker: str) -> bool:
-        """Validate if ticker exists and has required data"""
+        """
+        Validates a ticker by fetching its info and checking for a key field.
+        An empty history or lack of a 'shortName' often indicates an invalid ticker.
+        """
+        if not ticker:
+            return False
         try:
             stock = yf.Ticker(ticker)
-            return 'shortName' in stock.info
+            # A valid ticker from yfinance will have a non-empty info dictionary
+            # and usually a 'shortName' for actual companies.
+            if stock.info and stock.info.get('shortName'):
+                return True
+            # Check for history as a fallback for some assets
+            if not stock.history(period="5d").empty:
+                return True
+            return False
         except Exception:
             return False
 
@@ -123,7 +191,7 @@ class Stock:
             data = {field: info.get(key) for key, field in required_fields.items()}
             data['name'] = self.ticker
             
-            if not all(data.values()):
+            if not all(data.get(key) is not None for key in ['company', 'price']):
                 raise StockDataError(f"Missing required data for {self.ticker}")
 
             with self.db_manager.transaction():
