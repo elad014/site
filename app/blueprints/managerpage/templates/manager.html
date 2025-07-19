@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manager Site</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manager Site Version: {{version}}</h1>
+    <p>This button will clone the site from Git and update the files.</p>
+    <button onclick="git_update()">Update</button>
+    <button onclick="refresh()">Refresh</button>
+    <button onclick="_clean_log()">Clean Log</button>
+    <button onclick="return_home()">Return</button>
+    <h2>Server Log:</h2>
+    <pre>{{log}}</pre>
+
+    <script>
+    function git_update() {
+        fetch('manager/git_update', { method: 'POST' })
+            .then(response => response.json())  
+            .then(data => {
+                if (data.message === "Git update successful") {
+                    refresh();  
+                }
+            })
+            .catch(error => console.error("Error updating:", error));
+    }
+
+    function return_home() {
+        window.location.href = "/";
+    }
+
+    function refresh() {
+        fetch('/manager', { method: 'GET' })
+            .then(() => location.reload())  // Ensure reload happens after request
+            .catch(error => console.error("Error refreshing:", error));
+    }
+
+    function _clean_log() {
+        fetch('manager/clean_log', { method: 'POST' })  // Move inside function
+            .then(response => response.json())
+            .then(data => {
+                if (data.message === "Log cleaned successfully") {
+                    location.reload();  
+                }
+            })
+            .catch(error => console.error("Error cleaning log:", error));
+    }
+    </script>
+</body>
+</html>
