@@ -20,17 +20,85 @@ class DB_Config:
         
     @staticmethod
     def print_table_content(table_name):
-        cursor = DB_Config.get_cursor()
-        cursor.execute(f"SELECT * FROM {table_name}")
-        rows = cursor.fetchall()
-        colnames = [desc[0] for desc in cursor.description]
-        logger.info(f"Content of {table_name} table:")
-        logger.info("\t".join(colnames))
-        logger.info("-" * 40)
+        try:
+            cursor = DB_Config.get_cursor()
+            cursor.execute(f"SELECT * FROM {table_name}")
+            rows = cursor.fetchall()
+            colnames = [desc[0] for desc in cursor.description]
+            logger.info(f"Content of {table_name} table:")
+            print(f"DEBUG: Content of {table_name} table:")
+            logger.info("\t".join(colnames))
+            print("DEBUG: Columns:", "\t".join(colnames))
+            logger.info("-" * 40)
+            print("DEBUG:", "-" * 40)
+            
+            for row in rows:
+                logger.info("\t".join(map(str, row)))
+                print("DEBUG:", "\t".join(map(str, row)))
+            logger.info("\n")
+            print("DEBUG: End of table content\n")
+            
+        except Exception as e:
+            logger.error(f"Error printing table {table_name}: {e}")
+            print(f"DEBUG ERROR: Failed to print table {table_name}: {e}")
+        finally:
+            try:
+                cursor.close()
+            except:
+                pass
         
-        for row in rows:
-            logger.info("\t".join(map(str, row)))
-        logger.info("\n")
+    @staticmethod
+    def debug_users():
+        """Debug function specifically for printing users table"""
+        print("=== DEBUG: USERS TABLE ===")
+        try:
+            cursor = DB_Config.get_cursor()
+            
+            # Check if table exists
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_name = 'users'
+                );
+            """)
+            table_exists = cursor.fetchone()[0]
+            print(f"DEBUG: Users table exists: {table_exists}")
+            
+            if table_exists:
+                # Get table structure
+                cursor.execute("""
+                    SELECT column_name, data_type, is_nullable, column_default 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'users'
+                    ORDER BY ordinal_position;
+                """)
+                columns_info = cursor.fetchall()
+                print("DEBUG: Table structure:")
+                for col in columns_info:
+                    print(f"DEBUG:   {col[0]} ({col[1]}) - Nullable: {col[2]} - Default: {col[3]}")
+                
+                # Get all users
+                cursor.execute("SELECT * FROM users")
+                users = cursor.fetchall()
+                colnames = [desc[0] for desc in cursor.description]
+                
+                print(f"DEBUG: Found {len(users)} users")
+                print("DEBUG: Columns:", colnames)
+                
+                for i, user in enumerate(users):
+                    print(f"DEBUG: User {i+1}:", dict(zip(colnames, user)))
+            else:
+                print("DEBUG: Users table does not exist!")
+                
+        except Exception as e:
+            print(f"DEBUG ERROR: {e}")
+            logger.error(f"Debug users error: {e}")
+        finally:
+            try:
+                cursor.close()
+            except:
+                pass
+        print("=== END DEBUG USERS ===\n")
         
     @staticmethod
     def delete_table(cursor, conn, table_name):
