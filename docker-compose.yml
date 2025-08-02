@@ -8,3 +8,5 @@ services:
     environment:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
+
+  #########################################################
