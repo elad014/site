@@ -12,7 +12,7 @@ from managerpage.manager_page import manager_bp
 from stocks.stocks import stocks_bp
 from db import DB_Config
 from models import User
-
+## thgis is a try
 app = Flask(__name__)
 app.secret_key = '456789'
 
