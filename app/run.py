@@ -36,5 +36,6 @@ app.register_blueprint(manager_bp, url_prefix='/manager')
 app.register_blueprint(stocks_bp, url_prefix='/stocks')
 
 if __name__ == '__main__':
+    ## start the server
     app.run(debug=True, host='0.0.0.0', port=5000)
 
