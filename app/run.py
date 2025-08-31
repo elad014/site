@@ -19,7 +19,7 @@ app.secret_key = '456789'
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login.login_page" # Redirect to login page if user is not authenticated
-
+####################################
 @login_manager.user_loader
 def load_user(user_id):
     cursor = DB_Config.get_cursor()
