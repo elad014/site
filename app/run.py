@@ -29,7 +29,7 @@ def load_user(user_id):
     if user_data:
         return User(user_data)
     return None
-
+###########################################
 app.register_blueprint(login_bp)
 app.register_blueprint(signup_bp, url_prefix='/signup')
 app.register_blueprint(manager_bp, url_prefix='/manager')
