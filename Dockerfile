@@ -11,13 +11,13 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     curl \
     && rm -rf /var/lib/apt/lists/*
-
+## MR-2 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-
+## MR-2 
 # Copy the application code
 COPY app/ .
 
