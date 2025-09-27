@@ -1,13 +1,22 @@
 version: '3.8'
 
 services:
-  stocks-app:
-    image: stock-app:latest
+  web:
+    build: .
     ports:
       - "5000:5000"
+    volumes:
+      - .:/app
     environment:
-      - FLASK_ENV=production
-      - PYTHONUNBUFFERED=1
+      - FLASK_ENV=development
+  scheduler:
+    build: .
+    command: ["python", "app/scheduler.py"]
+    volumes:
+      - .:/app
+    depends_on:
+      - web
 
-  #########################################################
-##############################
+networks:
+  default:
+    driver: bridge
