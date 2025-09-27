@@ -2,62 +2,70 @@
 
 A Flask web application for managing and tracking stocks with user authentication.
 
-## Features
+## Running with Docker Compose
 
-- User login and authentication
-- Stock management and tracking
-- Real-time stock data via yfinance
-- PostgreSQL database integration
-- Responsive web interface
-
-## Docker Setup
+This is the recommended way to run the application. The setup uses Docker Compose to run two services:
+- **`stock_data_collector`**: A Flask API that serves stock data from the Alpha Vantage API.
+- **`scheduler`**: A background service that periodically fetches stock data from the collector and updates the database.
 
 ### Prerequisites
 
-- Docker
-- Docker Compose
+- Docker Desktop installed and running.
 
 ### Quick Start
 
-1. **Build and run with Docker Compose:**
-   ```bash
-   docker-compose up --build
-   ```
+1.  **Create a `.env` file**:
+    In the root of the project, create a file named `.env`. This file will hold your environment variables. Add the following content to it, replacing `YOUR_API_KEY_HERE` with your actual Alpha Vantage API key.
 
-2. **Or use the provided script (Windows):**
-   ```bash
-   build-and-run.bat
-   ```
+    ```
+    # --- API Configuration ---
+    ALPHAVANTAGE_API_KEY=YOUR_API_KEY_HERE
 
-3. **Access the application:**
-   - Open your browser and go to: `http://localhost:5000`
+    # --- Server Configuration ---
+    # The port the stock_data_collector will run on.
+    PORT=5000
+
+    # --- Scheduler Configuration ---
+    # The URL the scheduler will use to contact the data collector.
+    WEB_SERVICE_URL=http://localhost:5000
+    ```
+
+2.  **Build and Run the Services**:
+    Open a terminal in the project's root directory and run the following command:
+    ```bash
+    docker-compose up --build
+    ```
+    This will build the Docker image for the services and start them. The `stock_data_collector` service will be accessible on your local machine at `http://localhost:5000`.
 
 ### Docker Commands
 
-**Build the image:**
+**Start the services in the background:**
 ```bash
-docker-compose build
+docker-compose up --build -d
 ```
 
-**Start the application:**
-```bash
-docker-compose up -d
-```
-
-**View logs:**
+**View logs from all services:**
 ```bash
 docker-compose logs -f
 ```
 
-**Stop the application:**
+**Stop the services:**
 ```bash
 docker-compose down
 ```
 
-**Rebuild and restart:**
-```bash
-docker-compose down
-docker-compose up --build
+## Application Structure
+```
+site/
+├── app/
+│   ├── stock_data_collector_service.py # The Flask API
+│   ├── scheduler.py                    # The database update scheduler
+│   ├── db.py                           # Database configuration
+│   └── ...
+├── .env                    # Environment variables (you need to create this)
+├── Dockerfile              # Docker configuration
+├── docker-compose.yml      # Docker Compose configuration
+└── README.md               # This file
 ```
 
 ## Manual Setup (Without Docker)
