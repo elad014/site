@@ -10,7 +10,7 @@ from loginpage.login import login_bp
 from signuppage.signup import signup_bp
 from managerpage.manager_page import manager_bp
 from stocks.stocks import stocks_bp
-from db import DB_Config
+from db.db import DB_Config
 from models import User
 
 app = Flask(__name__)
@@ -37,5 +37,5 @@ app.register_blueprint(stocks_bp, url_prefix='/stocks')
 
 if __name__ == '__main__':
     ## MR-2 
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0.0', port=8080)
 

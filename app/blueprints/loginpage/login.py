@@ -2,7 +2,7 @@ from flask import render_template, Blueprint, redirect, url_for, request, flash
 from werkzeug.security import check_password_hash
 from flask_login import login_user, logout_user, login_required
 
-from db import DB_Config
+from db.db import DB_Config
 from models import User
 from utils import Logger
 

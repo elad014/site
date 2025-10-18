@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 try:
-    from app.db import DB_Config
+    from db.db import DB_Config
 except ImportError as e:
     logging.error(f"Error importing DB_Config: {e}")
     sys.exit(1)
@@ -124,7 +124,7 @@ def update_all_stocks() -> None:
 if __name__ == "__main__":
     scheduler = BlockingScheduler()
     # Schedule the job to run every 12 hours
-    scheduler.add_job(update_all_stocks, 'interval', minutes=1)
+    scheduler.add_job(update_all_stocks, 'interval', minutes=24*60)
     
     # Run the job immediately on startup as well
     logging.info("Running initial stock update on startup.")

@@ -1,24 +1,48 @@
 version: '3.8'
 services:
-  stock_data_collector:
-    container_name: stock_data_collector
-    build: .
-    command: ["gunicorn", "--bind", "0.0.0.0:5000", "app.stock_data_collector_service:app"]
-    volumes:
-      - .:/app
-    network_mode: "host"
+  web_app:
+    # Description: Main Flask web application with login, signup, manager, and stock pages
+    container_name: web_app
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    ports:
+      - "8080:8080"
     env_file:
       - .env
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  stock_data_collector:
+    # Description: Stock data API service that fetches data from Alpha Vantage
+    container_name: stock_data_collector
+    build:
+      context: .
+      dockerfile: stocks_data_collector/Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    networks:
+      - app_network
 
   scheduler:
+    # Description: Background scheduler that periodically updates stock data
     container_name: scheduler
-    build: .
-    command: ["python", "app/scheduler.py"]
-    volumes:
-      - .:/app
-    network_mode: "host"
+    build:
+      context: .
+      dockerfile: schedualer/Dockerfile
     env_file:
       - .env
+    restart: unless-stopped
+    depends_on:
+      - stock_data_collector
+    environment:
+      - WEB_SERVICE_URL=http://stock_data_collector:5000
+    networks:
+      - app_network
   ollama_flask_server:
     image: eladnatan/stocks_beta:ollma_flask_server
     container_name: flask-app
@@ -29,6 +53,8 @@ services:
     environment:
       - OLLAMA_HOST=http://ollama:11434
     restart: unless-stopped
+    networks:
+      - app_network
 
   ollama:
     image: eladnatan/ollama:l3
@@ -36,6 +62,12 @@ services:
     ports:
       - "11435:11434"
     restart: unless-stopped
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
 
 volumes:
   ollama_data:

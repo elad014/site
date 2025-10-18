@@ -7,11 +7,12 @@ import requests
 from flask import Flask, jsonify, Response
 from datetime import datetime
 import json
+from typing import Dict, Any
 import config
 
 app = Flask(__name__)
 
-def get_stock_data(symbol):
+def get_stock_data(symbol: str) -> Dict[str, Any]:
     """Get stock data from Alpha Vantage API"""
     try:
         params = {
@@ -43,13 +44,13 @@ def get_stock_data(symbol):
             return {"error": "No quote data found"}
         
         # Parse the data safely
-        def safe_float(value, default=0.0):
+        def safe_float(value: Any, default: float = 0.0) -> float:
             try:
                 return float(value) if value else default
             except (ValueError, TypeError):
                 return default
         
-        def safe_int(value, default=0):
+        def safe_int(value: Any, default: int = 0) -> int:
             try:
                 return int(float(value)) if value else default
             except (ValueError, TypeError):
@@ -73,7 +74,7 @@ def get_stock_data(symbol):
         return {"error": f"Unexpected error: {str(e)}"}
 
 @app.route('/')
-def home():
+def home() -> Response:
     """Health check endpoint"""
     return jsonify({
         "service": "Flask Stock API",
@@ -84,7 +85,7 @@ def home():
     })
 
 @app.route('/stock/<symbol>')
-def stock(symbol):
+def stock(symbol: str) -> tuple:
     """Get stock data for a symbol"""
     if not symbol or len(symbol) > 10:
         return Response(
@@ -107,7 +108,7 @@ def stock(symbol):
     )
 
 @app.route('/health')
-def health():
+def health() -> Response:
     """Health check"""
     return jsonify({"status": "healthy"})
 

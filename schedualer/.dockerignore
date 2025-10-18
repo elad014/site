@@ -16,8 +16,4 @@ htmlcov
 .venv
 venv
 ENV
-*.log
-test_*.py
-debug_*.py
-config_example.py
-setup_alphavantage.py
+
