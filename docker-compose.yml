@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   stock_data_collector:
     container_name: stock_data_collector
@@ -18,3 +19,24 @@ services:
     network_mode: "host"
     env_file:
       - .env
+  ollama_flask_server:
+    image: eladnatan/stocks_beta:ollma_flask_server
+    container_name: flask-app
+    ports:
+      - "5001:5001"
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    restart: unless-stopped
+
+  ollama:
+    image: eladnatan/ollama:l3
+    container_name: ollama
+    ports:
+      - "11435:11434"
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+
