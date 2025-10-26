@@ -1,6 +1,6 @@
 from flask import Flask,render_template, Blueprint,redirect,url_for,request,flash 
 from db.db import DB_Config, DB_Manager
-from utils import Logger
+from utils.utils import Logger
 import logging
 from werkzeug.security import generate_password_hash, check_password_hash
 

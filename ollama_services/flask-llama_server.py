@@ -6,7 +6,7 @@ from typing import Dict, Any
 app = Flask(__name__)
 
 # Get Ollama host from environment variable
-OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://localhost:11434')
+OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://localhost:11435')
 
 
 @app.route('/api/chat', methods=['POST'])
@@ -134,5 +134,5 @@ def index() -> Dict[str, Any]:
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5003, debug=True)
 

@@ -1,0 +1,10 @@
+# RAG Service Dependencies
+flask==3.0.0
+psycopg2-binary==2.9.10
+python-dotenv==1.0.0
+sentence-transformers==2.3.1
+PyPDF2==3.0.1
+pgvector==0.2.4
+requests==2.31.0
+werkzeug==3.0.1
+

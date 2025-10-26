@@ -1,17 +1,21 @@
 import os
 import sys
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'blueprints'))
+# Add project root and blueprints to Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(current_dir)  # Parent directory
+sys.path.insert(0, project_root)  # Add project root for 'db' module
+sys.path.append(os.path.join(current_dir, 'blueprints'))  # Add blueprints
 
 from flask import Flask
 from flask_login import LoginManager
 
-from loginpage.login import login_bp
-from signuppage.signup import signup_bp
-from managerpage.manager_page import manager_bp
-from stocks.stocks import stocks_bp
+from app.blueprints.loginpage.login import login_bp
+from app.blueprints.signuppage.signup import signup_bp
+from app.blueprints.managerpage.manager_page import manager_bp
+from app.blueprints.stocks.stocks import stocks_bp
 from db.db import DB_Config
-from models import User
+from app.models import User
 
 app = Flask(__name__)
 app.secret_key = '456789'

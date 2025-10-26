@@ -1,15 +1,15 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
-# import yfinance as yf  # Not used, commented out for Python 3.8 compatibility
-# from alpha_vantage.timeseries import TimeSeries  # Not used
-# from alpha_vantage.fundamentaldata import FundamentalData  # Not used
+import yfinance as yf  
+from alpha_vantage.timeseries import TimeSeries  
+from alpha_vantage.fundamentaldata import FundamentalData  
 import os
 import time
 from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from db.db import DB_Config, DB_Manager
-from utils import Logger
+from utils.utils import Logger
 
 logger = Logger.setup_logger(__name__)
 

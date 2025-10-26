@@ -20,8 +20,8 @@ except ImportError as e:
 load_dotenv()
 
 # The web service is running inside the Docker network
-WEB_SERVICE_URL = os.getenv("WEB_SERVICE_URL", "http://localhost:5000")
-print(f"DEBUG: WEB_SERVICE_URL: {WEB_SERVICE_URL}")
+Stock_Data_Collector_Service_URL = os.getenv("Stock_Data_Collector_Service_URL", "http://localhost:5001")
+print(f"DEBUG: Stock_Data_Collector_Service_URL: {Stock_Data_Collector_Service_URL}")
 from typing import List, Dict, Any, Optional
 
 def get_stock_symbols_from_db() -> List[str]:
@@ -44,7 +44,7 @@ def get_stock_symbols_from_db() -> List[str]:
 def get_stock_data_from_service(symbol: str) -> Optional[Dict[str, Any]]:
     """Gets stock data for a symbol by calling the web service."""
     try:
-        url = f"{WEB_SERVICE_URL}/stock/{symbol}"
+        url = f"{Stock_Data_Collector_Service_URL}/stock/{symbol}"
         response = requests.get(url, timeout=10)
         response.raise_for_status()  # Raise an exception for bad status codes
         data = response.json()
@@ -124,7 +124,7 @@ def update_all_stocks() -> None:
 if __name__ == "__main__":
     scheduler = BlockingScheduler()
     # Schedule the job to run every 12 hours
-    scheduler.add_job(update_all_stocks, 'interval', minutes=24*60)
+    scheduler.add_job(update_all_stocks, 'interval', minutes=3)
     
     # Run the job immediately on startup as well
     logging.info("Running initial stock update on startup.")

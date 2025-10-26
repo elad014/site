@@ -4,7 +4,7 @@ from flask_login import login_user, logout_user, login_required
 
 from db.db import DB_Config
 from models import User
-from utils import Logger
+from utils.utils import Logger
 
 logger = Logger.setup_logger(__name__)
 

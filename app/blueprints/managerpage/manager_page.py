@@ -1,7 +1,7 @@
 import os
 from flask import render_template, Blueprint
 import psycopg2
-from utils import Utils
+from utils.utils import Utils
 
 # Database connection parameters
 DB_NAME = "mydb"

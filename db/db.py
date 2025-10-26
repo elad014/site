@@ -1,5 +1,5 @@
 import psycopg2
-from utils import Logger
+from utils.utils import Logger
 from contextlib import contextmanager
 
 logger = Logger.setup_logger(__name__)

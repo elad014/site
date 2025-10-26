@@ -18,7 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the db module and utils (dependencies)
 COPY db/ /app/db/
-COPY app/utils.py /app/utils.py
+
+COPY utils/ /app/utils/
 
 # Copy the scheduler code
 COPY schedualer/ /app/
