@@ -1,6 +1,13 @@
 """
 RAG Flask API Service
 Provides REST API endpoints for document upload, indexing, and querying
+curl -X POST http://localhost:11435/api/generate -H "Content-Type: application/json" -d "{\"model\": \"llama3\", \"prompt\": \"Explain quantum computing\", \"stream\": false}"
+
+# Test Ollama Flask Server
+curl -X POST http://localhost:5003/api/chat -H "Content-Type: application/json" -d "{\"model\": \"llama3\", \"prompt\": \"Explain quantum computing\"}"
+
+# Test RAG Service
+curl -X POST http://localhost:5002/api/answer -H "Content-Type: application/json" -d "{\"query\": \"Show me Amazon performance in Q3.\"}"
 """
 import sys
 import os
