@@ -370,7 +370,7 @@ ANSWER (based only on the context above):"""
                 "stream": False
             }
             
-            response = requests.post(ollama_endpoint, json=payload, timeout=320)
+            response = requests.post(ollama_endpoint, json=payload, timeout=600)
             response.raise_for_status()
             llm_response = response.json()
             
