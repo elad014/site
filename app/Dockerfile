@@ -25,6 +25,9 @@ COPY utils/ /app/utils/
 
 COPY ollama_services/ /app/ollama_services/
 
+# Copy the RAG module
+COPY rag/ /app/rag/
+COPY pdf_storage/ /app/pdf_storage/
 # Copy the application code
 COPY app/ /app/
 

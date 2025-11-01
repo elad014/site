@@ -16,6 +16,9 @@ import os
 import PyPDF2
 import requests
 
+# Project root is the parent directory of the 'rag' directory
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -147,24 +150,27 @@ class RAGRetriever:
         self,
         stock_id: int,
         doc_name: str,
-        chunk_index: int,
         page_num: int,
+        start_char: int,
+        end_char: int,
         pdf_storage_dir: str = "pdf_storage"
     ) -> Optional[str]:
         """
-        Retrieve actual text from stored PDF file
+        Retrieve a precise chunk of text from a stored PDF file using character indices.
         
         Args:
             stock_id: Stock ID
             doc_name: Document name
-            chunk_index: Index of the chunk
             page_num: Page number containing the chunk
+            start_char: Starting character index of the chunk on the page
+            end_char: Ending character index of the chunk on the page
             pdf_storage_dir: Directory where PDFs are stored
             
         Returns:
-            Text content or None if not found
+            Text content of the precise chunk or None if not found
         """
-        pdf_path = os.path.join(pdf_storage_dir, str(stock_id), doc_name)
+        # Construct absolute path to the PDF storage from the project root
+        pdf_path = os.path.join(PROJECT_ROOT, pdf_storage_dir, str(stock_id), doc_name)
         
         if not os.path.exists(pdf_path):
             logger.warning(f"PDF not found: {pdf_path}")
@@ -180,11 +186,14 @@ class RAGRetriever:
                 
                 # Extract text from the specific page
                 page = pdf_reader.pages[page_num - 1]  # 0-indexed
-                text = page.extract_text()
+                page_text = page.extract_text()
                 
-                # TODO: Could implement chunk extraction logic here
-                # For now, return full page text
-                return text
+                if page_text is None:
+                    return None
+                    
+                # Extract the precise chunk using character indices
+                chunk_text = page_text[start_char:end_char]
+                return chunk_text
                 
         except Exception as e:
             logger.error(f"Error retrieving text from PDF: {e}")
@@ -230,17 +239,25 @@ class RAGRetriever:
         # Optionally retrieve actual text from PDFs
         if retrieve_text:
             for result in results:
-                page_num = result['metadata'].get('page', 1)
-                text = self.retrieve_chunk_text_from_pdf(
-                    stock_id=result['stock_id'],
-                    doc_name=result['doc_name'],
-                    chunk_index=result['chunk_index'],
-                    page_num=page_num,
-                    pdf_storage_dir=pdf_storage_dir
-                )
-                if text:
-                    result['retrieved_text'] = text
-                    result['note'] = 'Text retrieved from PDF'
+                metadata = result.get('metadata', {})
+                page_num = metadata.get('page')
+                start_char = metadata.get('start_char')
+                end_char = metadata.get('end_char')
+
+                if page_num is not None and start_char is not None and end_char is not None:
+                    text = self.retrieve_chunk_text_from_pdf(
+                        stock_id=result['stock_id'],
+                        doc_name=result['doc_name'],
+                        page_num=page_num,
+                        start_char=start_char,
+                        end_char=end_char,
+                        pdf_storage_dir=pdf_storage_dir
+                    )
+                    if text:
+                        result['retrieved_text'] = text
+                        result['note'] = 'Precise text chunk retrieved from PDF'
+                else:
+                    logger.warning(f"Chunk metadata missing char indices for chunk_index {result.get('chunk_index')} in {result.get('doc_name')}. Cannot retrieve precise text.")
         
         # Build response
         response = {
@@ -350,9 +367,10 @@ class RAGRetriever:
 
 IMPORTANT RULES:
 - Answer ONLY using information from the provided context
-- If the context doesn't contain the answer, say "The provided documents do not contain information about this."
+- If the context doesn't contain the answer, say "The provided documents do not contain information about this"
 - Do not use external knowledge or make assumptions
 - Cite which document and page you're referencing when possible
+- Answer in numbered points (e.g., 1., 2., 3.), placing each answer on a new line to make the response clear and easy to read
 
 CONTEXT FROM DOCUMENTS:
 {context}
@@ -362,6 +380,7 @@ QUESTION: {query_text}
 ANSWER (based only on the context above):"""
         
         # Call Ollama directly
+        print(prompt)
         try:
             ollama_endpoint = f"{ollama_url}/api/generate"
             payload = {
@@ -396,6 +415,72 @@ ANSWER (based only on the context above):"""
             }
         
         return answer
+
+    def get_first_chunk_with_text(self, pdf_storage_dir: str = "pdf_storage") -> Optional[Dict[str, any]]:
+        """
+        Retrieves the very first chunk from the database and its text from the PDF.
+        Useful for debugging.
+        
+        Returns:
+            A dictionary with chunk info and retrieved text, or None.
+        """
+        conn = self.get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Get the first chunk from the database
+            cursor.execute("""
+                SELECT id, stock_id, doc_name, chunk_index, metadata
+                FROM document_embeddings
+                ORDER BY id
+                LIMIT 1;
+            """)
+            first_chunk = cursor.fetchone()
+            
+            if not first_chunk:
+                print("No chunks found in the database.")
+                return None
+            
+            chunk_id, stock_id, doc_name, chunk_index, metadata = first_chunk
+            
+            print(f"Found first chunk: ID={chunk_id}, stock_id={stock_id}, doc_name='{doc_name}', chunk_index={chunk_index}")
+            print(f"Metadata: {metadata}")
+
+            # Now retrieve the text for this chunk
+            page_num = metadata.get('page')
+            start_char = metadata.get('start_char')
+            end_char = metadata.get('end_char')
+            
+            if page_num is not None and start_char is not None and end_char is not None:
+                text = self.retrieve_chunk_text_from_pdf(
+                    stock_id=stock_id,
+                    doc_name=doc_name,
+                    page_num=page_num,
+                    start_char=start_char,
+                    end_char=end_char,
+                    pdf_storage_dir=pdf_storage_dir
+                )
+                
+                if text:
+                    print("\\nSuccessfully retrieved text:")
+                    print("-" * 20)
+                    print(text)
+                    print("-" * 20)
+                    return {"chunk_info": first_chunk, "text": text}
+                else:
+                    print("\\nCould not retrieve text for the chunk.")
+                    return {"chunk_info": first_chunk, "text": None}
+            else:
+                print("\\nMetadata for the first chunk is missing page/character info.")
+                return {"chunk_info": first_chunk, "text": None}
+
+        except Exception as e:
+            logger.error(f"Error getting first chunk: {e}")
+            raise
+        finally:
+            cursor.close()
+            conn.close()
+
 
 
 class RAGStats:
@@ -500,17 +585,24 @@ class RAGStats:
             conn.close()
 
 
+
+
 if __name__ == "__main__":
     # Example usage
     DB_CONNECTION_STRING = "postgresql://neondb_owner:npg_MYw2ejoqv3BX@ep-green-wind-a2yx94w5-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
     
     # Initialize retriever
     retriever = RAGRetriever(DB_CONNECTION_STRING)
+
+    # New code to get the first chunk for debugging
+ #   print("Attempting to retrieve the first chunk from the database...")
+ #   retriever.get_first_chunk_with_text()
+    
     result = retriever.generate_answer(
-        query_text="What is Amazon revenue growth?",
+        query_text="What are the company's primary areas of investment for future growth?",
         stock_id=29,
         top_k=3,
-        ollama_url="http://ollama:11434",
+        ollama_url="http://localhost:11435",
         model_name="llama3"
     )
     print(result)

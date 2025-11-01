@@ -20,12 +20,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY flask-llama_server.py .
 
-# Expose port 5000
-EXPOSE 5003
+# Expose port 11435
+EXPOSE 11435
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5003/health', timeout=5)" || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:11435/health', timeout=5)" || exit 1
 
 # Run the Flask application
 CMD ["python", "flask-llama_server.py"]

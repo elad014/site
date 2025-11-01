@@ -3,7 +3,7 @@ import os
 
 class OllamaManager:
     def __init__(self, host=None):
-        self.host = host or os.environ.get('OLLAMA_HOST', 'http://ollama:11434')
+        self.host = host or os.environ.get('OLLAMA_HOST', 'http://localhost:11435')
 
     def ask_question(self, prompt: str, model: str = 'llama3') -> str:
         """

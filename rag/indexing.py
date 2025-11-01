@@ -117,9 +117,9 @@ class DocumentIndexer:
             
         return pages_data
     
-    def chunk_text(self, text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
+    def chunk_text(self, text: str, chunk_size: int = 250, overlap: int = 25) -> List[Dict[str, any]]:
         """
-        Split text into overlapping chunks
+        Split text into overlapping chunks with character-level indexes.
         
         Args:
             text: Text to chunk
@@ -127,41 +127,31 @@ class DocumentIndexer:
             overlap: Number of characters to overlap between chunks
             
         Returns:
-            List of text chunks
+            List of dictionaries, each containing 'text', 'start_char', 'end_char'
         """
         chunks = []
-        words = text.split()
-        
-        current_chunk = []
-        current_length = 0
-        
-        for word in words:
-            word_length = len(word) + 1  # +1 for space
+        start_index = 0
+        while start_index < len(text):
+            end_index = start_index + chunk_size
+            if end_index > len(text):
+                end_index = len(text)
             
-            if current_length + word_length > chunk_size and current_chunk:
-                # Save current chunk
-                chunks.append(' '.join(current_chunk))
-                
-                # Start new chunk with overlap
-                overlap_words = []
-                overlap_length = 0
-                for w in reversed(current_chunk):
-                    if overlap_length + len(w) + 1 <= overlap:
-                        overlap_words.insert(0, w)
-                        overlap_length += len(w) + 1
-                    else:
-                        break
-                
-                current_chunk = overlap_words
-                current_length = overlap_length
+            # Find the last space to avoid cutting words
+            if end_index < len(text):
+                last_space = text.rfind(' ', start_index, end_index)
+                if last_space > start_index:
+                    end_index = last_space
             
-            current_chunk.append(word)
-            current_length += word_length
-        
-        # Add the last chunk
-        if current_chunk:
-            chunks.append(' '.join(current_chunk))
-        
+            chunks.append({
+                'text': text[start_index:end_index],
+                'start_char': start_index,
+                'end_char': end_index
+            })
+            
+            start_index += chunk_size - overlap
+            if start_index >= end_index: # ensure progress
+                start_index = end_index
+
         return chunks
     
     def generate_embeddings(self, texts: List[str]) -> np.ndarray:
@@ -279,6 +269,8 @@ class DocumentIndexer:
         pdf_path: str, 
         stock_id: int, 
         doc_name: str = None,
+        report_date: Optional[str] = None,
+        report_type: Optional[str] = None,
         keep_pdf: bool = True
     ) -> Dict[str, any]:
         """
@@ -288,6 +280,8 @@ class DocumentIndexer:
             pdf_path: Path to the PDF file
             stock_id: ID of the stock this document belongs to
             doc_name: Name of the document (defaults to filename)
+            report_date: Optional date of the report
+            report_type: Optional type of the report (e.g., '10-K', 'Q2 Report')
             keep_pdf: Whether to store the original PDF for text retrieval
             
         Returns:
@@ -307,16 +301,23 @@ class DocumentIndexer:
         
         for page_data in pages_data:
             # Chunk the page text
-            page_chunks = self.chunk_text(page_data['text'])
+            page_chunks_with_indices = self.chunk_text(page_data['text'])
             
             # Create metadata for each chunk
-            for chunk in page_chunks:
-                all_chunks.append(chunk)
-                all_metadata.append({
+            for chunk_data in page_chunks_with_indices:
+                all_chunks.append(chunk_data['text'])
+                metadata = {
                     'page': page_data['page'],
                     'total_pages': page_data['total_pages'],
+                    'start_char': chunk_data['start_char'],
+                    'end_char': chunk_data['end_char'],
                     'doc_type': 'pdf'
-                })
+                }
+                if report_date:
+                    metadata['report_date'] = report_date
+                if report_type:
+                    metadata['report_type'] = report_type
+                all_metadata.append(metadata)
         
         logger.info(f"Created {len(all_chunks)} chunks from {len(pages_data)} pages")
         
@@ -439,11 +440,22 @@ if __name__ == "__main__":
     # Create table
     indexer.create_table_if_not_exists()
     
-    # Example: Index a PDF document
-    # result = indexer.index_pdf_document(
-    #     pdf_path="path/to/tesla_q2_report.pdf",
-    #     stock_id=29,
-    #     doc_name="tesla_q2_report.pdf"
-    # )
-    # print(f"Indexing result: {result}")
+    #Example: Index a PDF document
+    stock_id_to_index = 29
+    doc_name_to_index = "NASDAQ_AMZN_2024.pdf"
+    pdf_source_path = f"../pdf_storage/{doc_name_to_index}"
+
+    # IMPORTANT: First, delete any existing versions of this document to avoid duplicates
+    print(f"Deleting existing entries for {doc_name_to_index}...")
+    deleted_count = indexer.delete_document(stock_id=stock_id_to_index, doc_name=doc_name_to_index)
+    print(f"Deleted {deleted_count} old entries.")
+    
+    # Make sure your PDF is in the 'source_documents' directory at the project root
+    print(f"Indexing PDF from: {pdf_source_path}")
+    result = indexer.index_pdf_document(
+        pdf_path=pdf_source_path,
+        stock_id=stock_id_to_index,
+        doc_name=doc_name_to_index
+    )
+    print(f"Indexing result: {result}")
 
