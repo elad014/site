@@ -1,9 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manager Site</title>
+{% extends "base.html" %}
+
+{% block title %}Manager Site{% endblock %}
+
+{% block head %}
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,8 +15,9 @@
             margin: 10px;
         }
     </style>
-</head>
-<body>
+{% endblock %}
+
+{% block content %}
     <h1>Manager Site Version: {{version}}</h1>
     <p>This button will clone the site from Git and update the files.</p>
     <button onclick="git_update()">Update</button>
@@ -26,7 +26,9 @@
     <button onclick="return_home()">Return</button>
     <h2>Server Log:</h2>
     <pre>{{log}}</pre>
+{% endblock %}
 
+{% block scripts %}
     <script>
     function git_update() {
         fetch('manager/git_update', { method: 'POST' })
@@ -60,5 +62,4 @@
             .catch(error => console.error("Error cleaning log:", error));
     }
     </script>
-</body>
-</html>
+{% endblock %}

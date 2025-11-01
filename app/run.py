@@ -14,6 +14,7 @@ from app.blueprints.loginpage.login import login_bp
 from app.blueprints.signuppage.signup import signup_bp
 from app.blueprints.managerpage.manager_page import manager_bp
 from app.blueprints.stocks.stocks import stocks_bp
+from app.blueprints.chatbot.chatbot import chatbot_bp
 from db.db import DB_Config
 from app.models import User
 
@@ -38,6 +39,7 @@ app.register_blueprint(login_bp)
 app.register_blueprint(signup_bp, url_prefix='/signup')
 app.register_blueprint(manager_bp, url_prefix='/manager')
 app.register_blueprint(stocks_bp, url_prefix='/stocks')
+app.register_blueprint(chatbot_bp, url_prefix='/chatbot')
 
 if __name__ == '__main__':
     ## MR-2 

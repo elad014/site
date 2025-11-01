@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My App{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Chatbot container -->
+    <div id="chatbot-container">
+        <button id="chatbot-toggle">Chat</button>
+        <div id="chatbot-window">
+            <div id="chatbot-header">
+                <h2>Chatbot</h2>
+                <button id="chatbot-close">&times;</button>
+            </div>
+            <div id="chatbot-messages"></div>
+            <div id="chatbot-input-container">
+                <input type="text" id="chatbot-input" placeholder="Ask something...">
+                <button id="chatbot-send">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -15,12 +15,15 @@ RUN apt-get update && apt-get install -y \
 COPY app/requirements.txt .
 
 # Install Python dependencies
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the db module (dependency)
 COPY db/ /app/db/
 
 COPY utils/ /app/utils/
+
+COPY ollama_services/ /app/ollama_services/
 
 # Copy the application code
 COPY app/ /app/

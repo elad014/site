@@ -316,7 +316,7 @@ class RAGRetriever:
         stock_id: int = None,
         doc_name: str = None,
         top_k: int = 3,
-        ollama_url: str = "http://localhost:11435",
+        ollama_url: str = "http://ollama:11434",
         model_name: str = "llama3"
     ) -> Dict[str, any]:
         """
@@ -506,28 +506,13 @@ if __name__ == "__main__":
     
     # Initialize retriever
     retriever = RAGRetriever(DB_CONNECTION_STRING)
+    result = retriever.generate_answer(
+        query_text="What is Amazon revenue growth?",
+        stock_id=29,
+        top_k=3,
+        ollama_url="http://ollama:11434",
+        model_name="llama3"
+    )
+    print(result)
     
-    # Example query
-    # results = retriever.query(
-    #     query_text="What is Tesla's revenue growth?",
-    #     stock_id=29,
-    #     top_k=3
-    # )
-    # 
-    # print("\n=== Query Results ===")
-    # for i, result in enumerate(results['results'], 1):
-    #     print(f"\nResult {i}:")
-    #     print(f"Document: {result['doc_name']}")
-    #     print(f"Page: {result['metadata'].get('page')}")
-    #     print(f"Similarity: {result['similarity']:.4f}")
-    #     print(f"Text: {result['chunk'][:200]}...")
     
-    # Get statistics
-    stats = RAGStats(DB_CONNECTION_STRING)
-    total_stats = stats.get_total_stats()
-    print(f"\n=== RAG System Stats ===")
-    print(f"Total chunks: {total_stats['total_chunks']}")
-    print(f"Total documents: {total_stats['total_documents']}")
-    print(f"Total stocks: {total_stats['total_stocks_with_docs']}")
-    print(f"Avg chunks/doc: {total_stats['avg_chunks_per_document']:.2f}")
-
