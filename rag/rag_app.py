@@ -24,6 +24,7 @@ import re
 from indexing import DocumentIndexer
 from rag import RAGRetriever, RAGStats
 from ticker_utils import extract_ticker_from_question
+from kafka_producer import ChatMessageProducer
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -41,10 +42,18 @@ DB_CONNECTION_STRING = "postgresql://neondb_owner:npg_MYw2ejoqv3BX@ep-green-wind
 OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11435')
 OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3')
 
+# Kafka configuration
+KAFKA_BOOTSTRAP_SERVERS = os.getenv('KAFKA_BOOTSTRAP_SERVERS', 'kafka:9092')
+KAFKA_TOPIC = os.getenv('KAFKA_TOPIC', 'chat_messages')
+
 # Initialize services
 indexer = DocumentIndexer(DB_CONNECTION_STRING)
 retriever = RAGRetriever(DB_CONNECTION_STRING)
 stats_collector = RAGStats(DB_CONNECTION_STRING)
+kafka_producer = ChatMessageProducer(
+    bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
+    topic=KAFKA_TOPIC
+)
 
 # Allowed file extensions
 ALLOWED_EXTENSIONS = {'pdf'}
@@ -293,9 +302,14 @@ def generate_answer() -> Dict:
     
     Expected JSON body:
         - query: Query text string
+        - user_id (optional): User ID from session
+        - user_name (optional): Username from session
+        - top_k (optional): Number of context chunks to retrieve
     This endpoint auto-detects the ticker from the question. If detected, searches for context related to that ticker.
     If no ticker is found, searches across all tickers/documents.
     """
+    import time
+    
     try:
         data = request.get_json()
         
@@ -307,6 +321,8 @@ def generate_answer() -> Dict:
         
         query_text = data['query']
         top_k = data.get('top_k', 3)  # optionally can accept top_k
+        user_id = data.get('user_id')
+        user_name = data.get('user_name')
         
         # Validate top_k
         try:
@@ -319,8 +335,10 @@ def generate_answer() -> Dict:
         # Extract ticker from question (e.g., "What is Tesla's revenue?" -> "TSLA")
         detected_ticker = extract_ticker_from_question(query_text)
 
-        # Optionally: you can verify against your actual stocks table to ensure validity
+        # Track response time
+        start_time = time.time()
 
+        # Optionally: you can verify against your actual stocks table to ensure validity
         if detected_ticker:
             answer = retriever.generate_answer(
                 query_text=query_text,
@@ -339,6 +357,24 @@ def generate_answer() -> Dict:
                 ollama_url=OLLAMA_URL,
                 model_name=OLLAMA_MODEL
             )
+        
+        # Calculate response time
+        response_time_ms = int((time.time() - start_time) * 1000)
+        
+        # Publish to Kafka (non-blocking)
+        try:
+            kafka_producer.publish_chat_message(
+                user_id=user_id,
+                user_name=user_name,
+                query=query_text,
+                answer=answer.get('answer', ''),
+                detected_ticker=detected_ticker,
+                context_used=answer.get('context', {}),
+                model_name=OLLAMA_MODEL,
+                response_time_ms=response_time_ms
+            )
+        except Exception as kafka_error:
+            logger.error(f"Failed to publish to Kafka (non-critical): {kafka_error}")
         
         return jsonify({
             'status': 'success',

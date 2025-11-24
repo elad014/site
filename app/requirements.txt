@@ -7,6 +7,12 @@ python-dotenv==1.0.0
 requests==2.31.0
 alpha_vantage==2.3.1
 yfinance==0.2.18
+
+# CPU-only PyTorch (install before sentence-transformers to avoid GPU version)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.1.0+cpu
+torchvision==0.16.0+cpu
+
 sentence-transformers==2.3.1
 PyPDF2==3.0.1
 pgvector==0.2.4

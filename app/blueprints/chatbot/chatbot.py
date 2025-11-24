@@ -1,41 +1,67 @@
 import sys
 import os
 from flask import Blueprint, render_template, request, jsonify
+from flask_login import current_user
 from psycopg2 import OperationalError
 import logging
-
-# Add the project root to the Python path to allow importing from 'rag'
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
-
-from rag.rag import RAGRetriever
+import requests
 
 chatbot_bp = Blueprint('chatbot', __name__)
+
+# RAG Service configuration
+RAG_SERVICE_URL = os.getenv('RAG_SERVICE_URL', 'http://rag_service:5002')
 
 
 @chatbot_bp.route('/chat', methods=['POST'])
 def chat():
+    """
+    Chat endpoint that forwards messages to RAG service with user context
+    """
     data = request.get_json()
     message = data.get('message')
-    DB_CONNECTION_STRING = os.getenv('DB_CONNECTION_STRING')
-    if not DB_CONNECTION_STRING:
-        return jsonify({'error': 'Database connection string not found'}), 500
-    rag = RAGRetriever(DB_CONNECTION_STRING)
 
     if not message:
         return jsonify({'error': 'No message provided'}), 400
 
     try:
-        # The generate_answer function returns a dictionary.
-        # We need to extract the 'answer' text from it.
-        result_dict = rag.generate_answer(query_text=message, stock_id=29) # Assuming stock_id 29 for now
+        # Get user information from session
+        user_id = None
+        user_name = None
         
-        # Now, create the JSON response in the format the frontend expects.
-        response_text = result_dict.get('answer', 'Sorry, I could not generate an answer.')
-        return jsonify({'response': response_text})
+        if current_user.is_authenticated:
+            user_id = str(current_user.id)
+            user_name = current_user.full_name
+        
+        # Prepare request payload for RAG service
+        payload = {
+            'query': message,
+            'user_id': user_id,
+            'user_name': user_name
+        }
+        
+        # Call RAG service API
+        response = requests.post(
+            f'{RAG_SERVICE_URL}/api/answer',
+            json=payload,
+            timeout=30
+        )
+        
+        if response.status_code == 200:
+            result_data = response.json()
+            
+            if result_data.get('status') == 'success':
+                answer_text = result_data.get('data', {}).get('answer', 'Sorry, I could not generate an answer.')
+                return jsonify({'response': answer_text})
+            else:
+                error_msg = result_data.get('message', 'Unknown error from RAG service')
+                return jsonify({'error': error_msg}), 500
+        else:
+            logging.error(f"RAG service returned status {response.status_code}")
+            return jsonify({'error': 'Failed to get response from RAG service'}), 500
 
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error connecting to RAG service: {e}")
+        return jsonify({'error': 'Could not connect to RAG service'}), 500
     except Exception as e:
-        # It's good practice to log the error to the console
         logging.error(f"Error in chat endpoint: {e}")
         return jsonify({'error': str(e)}), 500
